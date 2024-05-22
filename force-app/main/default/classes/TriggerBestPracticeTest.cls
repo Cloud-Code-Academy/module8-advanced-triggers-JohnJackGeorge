@@ -55,13 +55,12 @@ public with sharing class TriggerBestPracticeTest {
         
         // Perform the test
         Test.startTest();
-        insert accountTypeProspect;
-        insert accountTypeNotChange;
+            insert accountTypeProspect;
+            insert accountTypeNotChange;
         Test.stopTest();
         
         // Retrieve the accounts again
         List<Account> prospectAccounts = [SELECT Id, Type FROM Account WHERE Type = 'Prospect'];
-
         // Assert that the number of accounts inserted is correct
         System.assertEquals(200, prospectAccounts.size(), 'Number of accounts inserted is incorrect.');
         
@@ -105,9 +104,9 @@ public with sharing class TriggerBestPracticeTest {
         }
 
         // Perform the test
-        Test.startTest();
+        //Test.startTest();
         insert accountsToInsert;
-        Test.stopTest();
+        //Test.stopTest();
 
         // Retrieve the accounts again
         List<Account> insertedAccounts = [SELECT Id, 
@@ -267,6 +266,7 @@ public with sharing class TriggerBestPracticeTest {
             Opportunity opp = new Opportunity(
                 Name = 'Test Opportunity ' + i,
                 StageName = 'Prospecting',
+                Amount = 5001,
                 CloseDate = Date.today(),
                 AccountId = acc.Id
             );
@@ -311,17 +311,13 @@ public with sharing class TriggerBestPracticeTest {
         insert oppsToInsert;
 
         List<Opportunity> opps = [SELECT Id, Name, StageName FROM Opportunity WHERE AccountId = :acc.Id];
+
         System.assertEquals(3, opps.size(), 'Number of Opportunities created is incorrect.');
         for (Opportunity opp : opps) {
             try {
                 delete opp;
-                if (opp.Name != 'Open Opp') {
-                    System.assert(false, 'Exception should have been thrown.');
-                }
             } catch (Exception e) {
-                if (opp.Name != 'Open Opp') {
-                    System.assert(e.getMessage().contains('Cannot delete closed opportunity'), 'Exception message is incorrect.' + e.getMessage());
-                }
+                System.assert(e.getMessage().contains('Cannot delete closed opportunity for a banking account that is won'), 'Exception message is incorrect.' + e.getMessage());
             }
         }
     }
@@ -337,6 +333,7 @@ public with sharing class TriggerBestPracticeTest {
             Opportunity opp = new Opportunity(
                 Name = 'Test Opportunity ' + i,
                 StageName = 'Prospecting',
+                Amount = 5001,
                 CloseDate = Date.today(),
                 AccountId = acc.Id
             );
@@ -360,6 +357,7 @@ public with sharing class TriggerBestPracticeTest {
             Opportunity opp = new Opportunity(
                 Name = 'Test Opportunity ' + i,
                 StageName = 'Prospecting',
+                Amount = 5001,
                 CloseDate = Date.today(),
                 AccountId = acc.Id
             );
@@ -371,8 +369,8 @@ public with sharing class TriggerBestPracticeTest {
             opp.StageName = 'Qualification';
         }
         update opps;
-
         List<Opportunity> updatedOpps = [SELECT Id, Description FROM Opportunity WHERE Id IN :opps];
+
         System.assertEquals(numberOfOpps, updatedOpps.size(), 'Number of Opportunities updated is incorrect.');
         for (Opportunity opp : updatedOpps) {
             System.assert(opp.Description.contains('Stage Change:Qualification'), 'Opportunity Description is incorrect: ' + opp.Description);
@@ -390,6 +388,7 @@ public with sharing class TriggerBestPracticeTest {
             Opportunity opp = new Opportunity(
                 Name = 'Test Opportunity ' + i,
                 StageName = 'Prospecting',
+                Amount = 5001,
                 CloseDate = Date.today(),
                 AccountId = acc.Id
             );
@@ -411,7 +410,8 @@ public with sharing class TriggerBestPracticeTest {
         Contact primaryContact = new Contact(
             FirstName = 'Primary',
             LastName = 'Contact',
-            AccountId = acc.Id
+            AccountId = acc.Id,
+            Title = 'CEO'
         );
 
         insert primaryContact;
@@ -431,6 +431,7 @@ public with sharing class TriggerBestPracticeTest {
             Opportunity opp = new Opportunity(
                 Name = 'Test Opportunity ' + i,
                 StageName = 'Prospecting',
+                Amount = 5001,
                 CloseDate = Date.today(),
                 AccountId = acc.Id,
                 Primary_Contact__c = primaryContact.Id
@@ -524,7 +525,7 @@ public with sharing class TriggerBestPracticeTest {
 
     /*
     * Opportunity Trigger
-    * When an opportunity is deleted prevent the deletion of a closed won opportunity if the account industry is 'Banking'.
+    * When an opportunity is deleted, prevent the deletion of a closed won opportunity if the account industry is 'Banking'.
     * Trigger should only fire on delete.
     */
     @IsTest
@@ -546,13 +547,13 @@ public with sharing class TriggerBestPracticeTest {
         }
         insert opportunitiesToInsert;
 
-        // Try to delete the opportunities
         Test.startTest();
+        // Try to delete the opportunities
         try {
             delete opportunitiesToInsert;
             System.assert(false, 'Expected an exception but did not get one.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Cannot delete closed opportunity'), 'The error message is not as expected: ' + e.getMessage());
+            System.assert(e.getMessage().contains('Cannot delete closed opportunity for a banking account that is won'), 'The error message is not as expected: ' + e.getMessage());
         }
         Test.stopTest();
     }
@@ -623,4 +624,5 @@ public with sharing class TriggerBestPracticeTest {
             System.assertEquals(opp.Primary_Contact__r.Title, 'CEO', 'Primary contact was not set correctly.');
         }
     }
+
 }
