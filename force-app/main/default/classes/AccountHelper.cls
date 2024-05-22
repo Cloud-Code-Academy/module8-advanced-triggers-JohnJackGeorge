@@ -29,6 +29,7 @@ Always ensure that your helper methods are bulk-safe to handle multiple records 
 public with sharing class AccountHelper {
     // if (Trigger.IsBefore && Trigger.IsInsert)
     public static void setTypeProspect(List<Account> accounts) {
+    //public static void setTypeProspect(List<SObject> objects) {
 
         // Set the account type to prospect
         for(Account acc : accounts) {
@@ -83,8 +84,10 @@ public with sharing class AccountHelper {
             con.Email = 'default@email.com';
             contactsToInsert.add(con);
         }
-        if(!contactsToInsert.isEmpty()) {
-            insert contactsToInsert;
-        }
+        Database.DMLOptions dml = new Database.DMLOptions();
+        dml.DuplicateRuleHeader.AllowSave = true;
+        Database.insert(contactsToInsert, dml);
+        
     }
+
 }
